@@ -98,7 +98,7 @@ export default function Strategy() {
             </div>
 
             <button className="mt-8 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full text-xs font-semibold uppercase tracking-wider text-orange-50 bg-gradient-to-b from-orange-400 to-orange-600 hover:from-orange-300 hover:to-orange-500 shadow-[0_8px_24px_-6px_rgba(249,115,22,0.55)] transition-colors">
-              Open HOTBOT <ArrowUpRight className="w-3.5 h-3.5" />
+              Open CREW <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

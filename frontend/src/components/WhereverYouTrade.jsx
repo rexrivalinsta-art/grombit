@@ -6,12 +6,11 @@ export default function WhereverYouTrade() {
     <section className="relative py-32">
       <div className="max-w-7xl mx-auto px-6">
         <h2 className="text-5xl sm:text-6xl font-semibold tracking-[-0.03em] text-white leading-[1.05] max-w-3xl">
-          HOTBOT works <span className="text-neutral-500">wherever you trade.</span>
+          CREW works <span className="text-neutral-500">wherever you trade.</span>
         </h2>
-        <p className="mt-6 text-neutral-400 max-w-xl">Keep using the trading tools you already use. Let HOTBOT handle the repetitive work between them.</p>
+        <p className="mt-6 text-neutral-400 max-w-xl">Keep using the trading tools you already use. Let CREW handle the repetitive work between them.</p>
 
         <div className="mt-16 grid lg:grid-cols-2 gap-6">
-          {/* Mock pump.fun chart */}
           <div className="relative rounded-2xl border border-white/10 bg-[#111113] p-5 overflow-hidden">
             <div className="flex items-center gap-2 mb-4">
               <img src="https://usehotbot.com/icons/launchpads/pumpfun.webp" className="w-5 h-5" alt="pumpfun" />
@@ -34,16 +33,15 @@ export default function WhereverYouTrade() {
             </div>
           </div>
 
-          {/* Team panel */}
           <div className="relative rounded-2xl border border-white/10 bg-[#111113] p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-orange-600" />
-              <span className="text-sm text-white font-semibold">HOTBOT</span>
+              <span className="text-sm text-white font-semibold">CREW</span>
               <span className="text-xs text-neutral-500 ml-auto">Team panel</span>
             </div>
             <div className="space-y-2">
               {[
-                { img: 'https://usehotbot.com/litepaper/assets/research.svg', name: 'ResearchBot', assigned: 'Fresh Runners' },
+                { img: 'https://usehotbot.com/litepaper/assets/research.svg', name: 'ScoutBot', assigned: 'Fresh Runners' },
                 { img: 'https://usehotbot.com/litepaper/assets/sniper.svg', name: 'SniperBot', assigned: 'Patient Entries' },
                 { img: 'https://usehotbot.com/litepaper/assets/trader.svg', name: 'TraderBot', assigned: '1 assigned' },
                 { img: 'https://usehotbot.com/litepaper/assets/launch.svg', name: 'LaunchBot', assigned: '1 assigned' },
@@ -58,7 +56,6 @@ export default function WhereverYouTrade() {
           </div>
         </div>
 
-        {/* Brands */}
         <div className="mt-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 items-center">
           {BRANDS.map((b) => (
             <div key={b.name} className="flex items-center gap-2 justify-center opacity-80 hover:opacity-100 transition-opacity">

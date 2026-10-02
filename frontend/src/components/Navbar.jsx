@@ -18,7 +18,7 @@ export default function Navbar() {
           <div className="w-7 h-7 rounded-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-600 shadow-[0_0_18px_rgba(249,115,22,0.45)] group-hover:shadow-[0_0_26px_rgba(249,115,22,0.65)] transition-shadow">
             <Flame className="w-4 h-4 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-white font-semibold tracking-tight">hotbot</span>
+          <span className="text-white font-semibold tracking-tight">trenchcrew</span>
         </Link>
         <nav className="flex items-center gap-6">
           <Link

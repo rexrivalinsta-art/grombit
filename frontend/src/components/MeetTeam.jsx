@@ -9,9 +9,9 @@ export default function MeetTeam() {
       <div className="relative max-w-7xl mx-auto px-6 text-center">
         <h2 className="text-6xl sm:text-7xl font-semibold tracking-[-0.03em] text-white leading-[1.02]">
           Meet your <br />
-          <span className="text-neutral-400">trading team.</span>
+          <span className="text-neutral-400">trading crew.</span>
         </h2>
-        <p className="mt-6 text-neutral-400">You keep trenching. Your team handles the repetition.</p>
+        <p className="mt-6 text-neutral-400">You keep trenching. Your crew handles the repetition.</p>
 
         <button className="mt-8 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider text-orange-50 bg-gradient-to-b from-orange-400 to-orange-600 hover:from-orange-300 hover:to-orange-500 shadow-[0_8px_24px_-6px_rgba(249,115,22,0.55)] transition-colors">
           Invite Only <Lock className="w-3.5 h-3.5" />

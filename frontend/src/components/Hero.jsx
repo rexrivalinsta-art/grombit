@@ -5,7 +5,6 @@ import { ChevronDown } from 'lucide-react';
 export default function Hero() {
   return (
     <section className="relative pt-32 pb-24 overflow-hidden">
-      {/* Ambient orange glow */}
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-orange-600/20 blur-[140px] rounded-full" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,#0a0a0b_80%)]" />
 
@@ -13,12 +12,12 @@ export default function Hero() {
         <h1 className="text-[52px] sm:text-7xl md:text-[88px] font-semibold tracking-[-0.03em] leading-[1.02] text-white">
           Your private{' '}
           <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-amber-500 bg-clip-text text-transparent">
-            trading team.
+            trading crew.
           </span>
         </h1>
         <p className="mt-6 text-neutral-400 text-lg">Specialist bots working together wherever you trade.</p>
         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-neutral-500">
-          <span>research</span><span className="text-neutral-700">|</span>
+          <span>scout</span><span className="text-neutral-700">|</span>
           <span>snipe</span><span className="text-neutral-700">|</span>
           <span>trade</span><span className="text-neutral-700">|</span>
           <span>launch</span><span className="text-neutral-700">+</span>

@@ -10,16 +10,16 @@ export default function Footer() {
             <Flame className="w-4 h-4 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-white font-semibold">
-            usehotbot<span className="text-neutral-500">.com</span>
+            trenchcrew<span className="text-neutral-500">.app</span>
           </span>
         </div>
         <nav className="flex items-center gap-6 text-sm text-neutral-400">
           <a href="#hot" className="hover:text-white transition-colors">Product</a>
-          <a href="#strategy" className="hover:text-white transition-colors">The team</a>
+          <a href="#strategy" className="hover:text-white transition-colors">The crew</a>
           <a href="#strategies" className="hover:text-white transition-colors">Strategies</a>
           <a href="/litepaper" className="hover:text-white transition-colors">Litepaper</a>
         </nav>
-        <div className="text-sm text-neutral-500">© 2026 HOTBOT</div>
+        <div className="text-sm text-neutral-500">© 2026 TrenchCrew</div>
       </div>
     </footer>
   );

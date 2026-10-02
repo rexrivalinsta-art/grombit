@@ -11,44 +11,32 @@ export default function BuiltDifferent() {
         </h2>
         <p className="mt-4 text-neutral-400">Four specialists. Questionable sleep schedules.</p>
 
-        {/* Specialist tabs */}
         <div className="mt-10 flex flex-wrap gap-3">
           {specialists.map((s) => (
             <button key={s.id} className="group inline-flex items-center gap-2 pl-2 pr-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
               <img src={s.img} className="w-6 h-6 rounded-full" alt={s.name} />
               <span className="text-sm text-white font-medium">{s.name}</span>
-              <span className="text-xs text-neutral-500">{s.name.replace('Bot','')}</span>
             </button>
           ))}
         </div>
 
-        {/* Scene */}
         <div className="mt-10 relative rounded-3xl border border-white/10 overflow-hidden bg-[#0d0d0f]">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.15),transparent_60%)]" />
           <div className="relative grid lg:grid-cols-[1.1fr_1fr] gap-0">
-            {/* Trader bot illustration */}
             <div className="relative min-h-[420px] p-10 flex items-center justify-center">
               <div className="relative">
                 <div className="absolute inset-0 w-[280px] h-[280px] bg-blue-500/30 blur-3xl rounded-full" />
                 <img src="https://usehotbot.com/litepaper/assets/trader.svg" className="relative w-56 h-56 object-contain drop-shadow-[0_30px_60px_rgba(59,130,246,0.4)]" alt="TraderBot" />
               </div>
-              {/* Floating tiles */}
               <div className="absolute top-10 left-10 px-3 py-1.5 rounded-md bg-black/60 border border-white/10 text-xs text-emerald-400 font-mono">
                 <span className="inline-block w-1.5 h-1.5 bg-emerald-400 rounded-full mr-1.5 animate-pulse" />
                 WIF · 1M LIVE
               </div>
-              <div className="absolute bottom-16 left-16 px-3 py-1.5 rounded-md bg-black/60 border border-white/10 text-xs text-red-400 font-mono">
-                CLOUD / SOL LIVE
-              </div>
-              <div className="absolute top-20 right-10 px-3 py-1.5 rounded-md bg-black/60 border border-white/10 text-xs text-neutral-300 font-mono">
-                PERPS LIVE
-              </div>
-              <div className="absolute bottom-10 right-16 px-3 py-1.5 rounded-md bg-black/60 border border-white/10 text-xs text-amber-300 font-mono">
-                BONK · 5S LIVE
-              </div>
+              <div className="absolute bottom-16 left-16 px-3 py-1.5 rounded-md bg-black/60 border border-white/10 text-xs text-red-400 font-mono">CLOUD / SOL LIVE</div>
+              <div className="absolute top-20 right-10 px-3 py-1.5 rounded-md bg-black/60 border border-white/10 text-xs text-neutral-300 font-mono">PERPS LIVE</div>
+              <div className="absolute bottom-10 right-16 px-3 py-1.5 rounded-md bg-black/60 border border-white/10 text-xs text-amber-300 font-mono">BONK · 5S LIVE</div>
             </div>
 
-            {/* Chart card */}
             <div className="relative p-8 border-l border-white/5">
               <div className="rounded-xl bg-black/60 border border-white/10 p-5">
                 <div className="flex items-center justify-between">
@@ -61,7 +49,6 @@ export default function BuiltDifferent() {
                     <span className="text-xs text-emerald-400 font-mono">+12.0%</span>
                   </div>
                 </div>
-                {/* Fake candles */}
                 <div className="mt-5 h-40 flex items-end gap-1">
                   {Array.from({ length: 42 }).map((_, i) => {
                     const h = 30 + Math.abs(Math.sin(i * 0.6) * 60) + (i % 7) * 2;
@@ -78,7 +65,6 @@ export default function BuiltDifferent() {
             </div>
           </div>
 
-          {/* Ticker */}
           <div className="relative border-t border-white/5 bg-black/40 overflow-hidden">
             <div className="flex gap-10 py-3 text-xs font-mono text-neutral-400 whitespace-nowrap" style={{ animation: 'ticker 30s linear infinite' }}>
               {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((t, i) => (
