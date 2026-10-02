@@ -1,21 +1,22 @@
 import React from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import Litepaper from './pages/Litepaper';
-import { Toaster } from './components/ui/toaster';
+import { AuthProvider } from './context/AuthContext';
+import Landing from './pages/Landing';
+import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
-    <div className="App">
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/litepaper" element={<Litepaper />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/trade" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
-      <Toaster />
-    </div>
+    </AuthProvider>
   );
 }
 
