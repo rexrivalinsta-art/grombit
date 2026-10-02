@@ -21,6 +21,7 @@ from solana_service import (
 from coin_service import get_live_coins
 from trading_engine import (
     start_session, stop_session, get_session, session_to_public, RISK_PROFILES,
+    credit_to_session, debit_from_session,
 )
 from chat_service import crew_chat_once
 
@@ -56,6 +57,7 @@ class StartTradingBody(BaseModel):
 class ChatBody(BaseModel):
     session_id: Optional[str] = None
     text: str
+    model: Optional[str] = None
 
 class VerifyDepositBody(BaseModel):
     tx_signature: str
@@ -174,6 +176,8 @@ async def deposit_verify(body: VerifyDepositBody, user_id: str = Depends(get_cur
     new_balance = float(user.get('balance_sol', 0.0)) + amount
     new_total = float(user.get('total_deposited', 0.0)) + amount
     await users_coll.update_one({'id': user_id}, {'$set': {'balance_sol': new_balance, 'total_deposited': new_total}})
+    # If a trading session is running, sync it too so the poll loop doesn't overwrite the deposit
+    credit_to_session(user_id, amount)
     await txs_coll.insert_one({
         'id': str(uuid.uuid4()), 'user_id': user_id, 'kind': 'deposit',
         'signature': body.tx_signature, 'amount_sol': amount, 'from_addr': result.get('from_addr'),
@@ -199,6 +203,8 @@ async def withdraw(body: WithdrawBody, user_id: str = Depends(get_current_user_i
     new_balance = bal - body.amount_sol
     new_total_w = float(user.get('total_withdrawn', 0.0)) + body.amount_sol
     await users_coll.update_one({'id': user_id}, {'$set': {'balance_sol': new_balance, 'total_withdrawn': new_total_w}})
+    # Sync debit into live session if one exists
+    debit_from_session(user_id, body.amount_sol)
     await txs_coll.insert_one({
         'id': str(uuid.uuid4()), 'user_id': user_id, 'kind': 'withdraw',
         'signature': result['signature'], 'amount_sol': body.amount_sol, 'fee_sol': fee,
@@ -261,7 +267,7 @@ async def trading_state(user_id: str = Depends(get_current_user_id)):
 # ----- CHAT -----
 @api.post('/chat')
 async def chat(body: ChatBody, user_id: str = Depends(get_current_user_id)):
-    reply = await crew_chat_once(body.session_id or user_id, body.text)
+    reply = await crew_chat_once(body.session_id or user_id, body.text, body.model)
     return {'reply': reply}
 
 app.include_router(api)

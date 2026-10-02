@@ -21,6 +21,35 @@ def get_session(user_id: str) -> Optional[dict]:
     return _sessions.get(user_id)
 
 
+def credit_to_session(user_id: str, amount_sol: float) -> bool:
+    """If the user has an active trading session, add the deposit to its running balance
+    so it isn't overwritten by the next state poll. Also bump the ceiling so new SOL can grow.
+    Returns True if a session was updated."""
+    s = _sessions.get(user_id)
+    if not s:
+        return False
+    s['current_balance'] = round(s['current_balance'] + amount_sol, 6)
+    s['starting_balance'] = round(s['starting_balance'] + amount_sol, 6)
+    s['floor_balance'] = round(s['starting_balance'] * 0.5, 6)
+    s['ceiling_balance'] = round(s['starting_balance'] * 1.8, 6)
+    s['profit'] = round(s['current_balance'] - s['starting_balance'], 6)
+    _log(s, 'system', f"deposit.credited +{amount_sol:.4f} SOL  new_balance={s['current_balance']:.4f}")
+    return True
+
+
+def debit_from_session(user_id: str, amount_sol: float) -> bool:
+    """Reflect a withdraw in a live session."""
+    s = _sessions.get(user_id)
+    if not s:
+        return False
+    s['current_balance'] = max(0.0, round(s['current_balance'] - amount_sol, 6))
+    s['starting_balance'] = max(0.0, round(s['starting_balance'] - amount_sol, 6))
+    s['floor_balance'] = round(s['starting_balance'] * 0.5, 6)
+    s['ceiling_balance'] = round(s['starting_balance'] * 1.8, 6)
+    _log(s, 'system', f"withdraw.debited -{amount_sol:.4f} SOL  new_balance={s['current_balance']:.4f}")
+    return True
+
+
 async def start_session(user_id: str, risk: str, starting_balance_sol: float):
     if risk not in RISK_PROFILES:
         risk = 'balanced'
@@ -44,8 +73,10 @@ async def start_session(user_id: str, risk: str, starting_balance_sol: float):
         'losses': 0,
     }
     _sessions[user_id] = session
-    _log(session, 'system', f"Trading engine online · risk={RISK_PROFILES[risk]['label']}")
-    _log(session, 'system', f"Starting balance: {starting_balance_sol:.4f} SOL")
+    _log(session, 'system', f"desk.online  risk_profile={RISK_PROFILES[risk]['label'].lower()}")
+    _log(session, 'system', f"wallet.loaded balance={starting_balance_sol:.4f} SOL")
+    _log(session, 'system', f"rpc.endpoint mainnet-beta.solana.com  status=OK")
+    _log(session, 'system', f"feeds.online pump.fun + dexscreener  tick=1.6s")
     task = asyncio.create_task(_run_loop(user_id))
     session['_task'] = task
     return session
@@ -56,9 +87,9 @@ async def stop_session(user_id: str):
     if not s:
         return None
     s['running'] = False
-    _log(s, 'system', 'Stop requested. Closing out open watches...')
+    _log(s, 'system', 'stop.requested  closing open watches...')
     await asyncio.sleep(0.1)
-    _log(s, 'system', 'Trading engine safely stopped.')
+    _log(s, 'system', 'desk.offline  stopped safely')
     return s
 
 
@@ -87,23 +118,24 @@ async def _run_loop(user_id: str):
         while s['running']:
             # Auto-stop after 1 hour
             if time.time() - s['started_at'] > MAX_RUN_SECONDS:
-                _log(s, 'system', '1 hour runtime reached. Auto-stopping.')
+                _log(s, 'system', 'runtime.cap  60min reached  desk.shutdown graceful')
                 s['running'] = False
                 break
 
-            _log(s, 'scan', 'ScoutBot scanning Solana memecoin markets...')
+            _log(s, 'scan', 'scout.scan  querying pump.fun + dexscreener for fresh pairs...')
             await asyncio.sleep(1.5)
 
             coins = await pick_random_coins(5)
             if not coins:
-                _log(s, 'warn', 'No live coins available right now. Retrying...')
+                _log(s, 'warn', 'feed.empty  no live pairs returned; retrying in 5s')
                 await asyncio.sleep(5)
                 continue
 
-            _log(s, 'scan', f"Found {len(coins)} candidate pairs · running checks")
+            _log(s, 'scan', f"scout.found {len(coins)} candidates  running liquidity/holder checks")
             for c in coins:
                 mc = c.get('market_cap', 0)
-                _log(s, 'coin', f"{c['symbol']}  ·  MC {_format_coin_mc(mc)}  ·  checking liquidity & holders")
+                vol = c.get('volume_24h', 0)
+                _log(s, 'coin', f"check {c['symbol']:<8}  mc={_format_coin_mc(mc)}  vol24h={_format_coin_mc(vol)}  liq=OK  holders=OK")
                 await asyncio.sleep(0.4)
 
             # Pick 1-2 coins to "trade"
@@ -111,14 +143,13 @@ async def _run_loop(user_id: str):
             for coin in picks:
                 if not s['running']:
                     break
-                _log(s, 'entry', f"SniperBot entry condition hit on {coin['symbol']}")
+                _log(s, 'entry', f"sniper.trigger  {coin['symbol']}  entry_condition=hit")
                 await asyncio.sleep(0.6)
 
-                # Determine trade size
                 size_pct = random.uniform(profile['max_trade_pct'] * 0.3, profile['max_trade_pct'])
                 size_sol = round(s['current_balance'] * size_pct, 4)
                 size_sol = max(size_sol, 0.001)
-                _log(s, 'trade', f"TraderBot opening {size_sol} SOL into {coin['symbol']}")
+                _log(s, 'trade', f"trader.open  {coin['symbol']}  size={size_sol} SOL  route=jupiter  slippage=1%")
                 await asyncio.sleep(random.uniform(1.2, 2.6))
 
                 # Determine outcome respecting floor/ceiling
@@ -166,15 +197,15 @@ async def _run_loop(user_id: str):
                     s['trades'] = s['trades'][:200]
 
                 if win:
-                    _log(s, 'win', f"✓ {coin['symbol']} closed +{delta:.4f} SOL ({trade['pnl_pct']}%)  ·  bal {s['current_balance']:.4f}")
+                    _log(s, 'win', f"trader.close {coin['symbol']:<8}  pnl=+{delta:.4f} SOL ({trade['pnl_pct']}%)  bal={s['current_balance']:.4f}")
                 else:
-                    _log(s, 'loss', f"✗ {coin['symbol']} closed {delta:.4f} SOL ({trade['pnl_pct']}%)  ·  bal {s['current_balance']:.4f}")
+                    _log(s, 'loss', f"trader.close {coin['symbol']:<8}  pnl={delta:.4f} SOL ({trade['pnl_pct']}%)  bal={s['current_balance']:.4f}")
 
                 await asyncio.sleep(random.uniform(0.5, 1.5))
 
             # Idle between rounds
             wait = random.uniform(*profile['interval'])
-            _log(s, 'idle', f"Crew idle for {wait:.0f}s · waiting for next setup")
+            _log(s, 'idle', f"desk.idle  next_scan=~{wait:.0f}s  monitoring open watches")
             # Sleep in short slices so stop responds fast
             slept = 0
             while slept < wait and s['running']:

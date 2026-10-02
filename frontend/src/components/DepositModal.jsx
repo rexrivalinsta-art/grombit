@@ -45,7 +45,16 @@ export default function DepositModal({ open, onClose }) {
   const payWithPhantom = async () => {
     setErr(''); setMsg(null); setPhantomBusy(true);
     try {
-      if (!window.solana || !window.solana.isPhantom) throw new Error('Phantom wallet not detected');
+      if (!window.solana || !window.solana.isPhantom) {
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          const ref = encodeURIComponent(window.location.href);
+          window.location.href = `https://phantom.app/ul/browse/${ref}?ref=${ref}`;
+        } else {
+          window.open('https://phantom.app/download', '_blank', 'noopener,noreferrer');
+        }
+        throw new Error('Opening Phantom...');
+      }
       const connected = await window.solana.connect();
       const fromPubkey = connected.publicKey;
       // Build transfer transaction using @solana/web3.js loaded from CDN

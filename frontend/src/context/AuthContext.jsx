@@ -37,14 +37,22 @@ export function AuthProvider({ children }) {
   };
   const loginPhantom = async () => {
     if (typeof window === 'undefined' || !window.solana || !window.solana.isPhantom) {
-      throw new Error('Phantom wallet not detected. Install Phantom from phantom.app');
+      // Redirect to Phantom instead of showing an error
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile) {
+        // Phantom universal link - opens app if installed, else the store
+        const ref = encodeURIComponent(window.location.href);
+        window.location.href = `https://phantom.app/ul/browse/${ref}?ref=${ref}`;
+      } else {
+        window.open('https://phantom.app/download', '_blank', 'noopener,noreferrer');
+      }
+      throw new Error('Opening Phantom...');
     }
     const resp = await window.solana.connect();
     const pubkey = resp.publicKey.toString();
     const message = `TrenchCrew sign-in · ${new Date().toISOString()}`;
     const encoded = new TextEncoder().encode(message);
     const signed = await window.solana.signMessage(encoded, 'utf8');
-    // Phantom returns signature as Uint8Array; convert to base58
     const sigB58 = window.bs58 ? window.bs58.encode(signed.signature) : await encodeBase58(signed.signature);
     const r = await api.phantomLogin(pubkey, sigB58, message);
     setToken(r.token);

@@ -41,7 +41,7 @@ export const api = {
   startTrading: (risk) => request('/trading/start', { method: 'POST', body: { risk } }),
   stopTrading: () => request('/trading/stop', { method: 'POST' }),
   tradingState: () => request('/trading/state'),
-  chat: (text, session_id) => request('/chat', { method: 'POST', body: { text, session_id } }),
+  chat: (text, session_id, model) => request('/chat', { method: 'POST', body: { text, session_id, model } }),
 };
 
 export function setToken(token) {
