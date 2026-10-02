@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import DepositModal from '../components/DepositModal';
 import WithdrawModal from '../components/WithdrawModal';
-import { ArrowDownToLine, ArrowUpFromLine, Play, Square, Send, Loader2, LogOut, Power, Terminal, Wifi, Activity, CircleDollarSign, ChevronDown, Cpu, Lock, Sparkles } from 'lucide-react';
+import LaunchPanel from '../components/LaunchPanel';
+import { ArrowDownToLine, ArrowUpFromLine, Play, Square, Send, Loader2, LogOut, Power, Terminal, Wifi, Activity, CircleDollarSign, ChevronDown, Cpu, Lock, Sparkles, Rocket } from 'lucide-react';
 
 const RISK_META = {
   conservative: { label: 'CONSERVATIVE', color: '#22c55e', desc: '2% max size · patient entries' },
@@ -43,6 +44,7 @@ export default function Dashboard() {
   const [chatBusy, setChatBusy] = useState(false);
   const [model, setModel] = useState(() => localStorage.getItem('tc_model') || 'crew-core');
   const [modelOpen, setModelOpen] = useState(false);
+  const [tab, setTab] = useState('desk'); // desk | launch
 
   const activeModel = MODELS.find((m) => m.id === model) || MODELS[0];
 
@@ -167,15 +169,25 @@ export default function Dashboard() {
           <Stat label="DEPOSITED/WITHDRAWN" value={`${(user.total_deposited||0).toFixed(2)}/${(user.total_withdrawn||0).toFixed(2)}`} accent="#a78bfa" />
         </div>
 
-        {/* ACTIONS BAR */}
+        {/* TABS */}
+        <div className="flex items-center gap-1 border-b border-neutral-800">
+          <TabButton active={tab === 'desk'} onClick={() => setTab('desk')} icon={<Terminal className="w-3.5 h-3.5" />}>DESK</TabButton>
+          <TabButton active={tab === 'launch'} onClick={() => setTab('launch')} icon={<Rocket className="w-3.5 h-3.5" />}>LAUNCH</TabButton>
+          <div className="ml-auto flex items-center gap-2 pb-1 pr-1">
+            <button onClick={() => setDepositOpen(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[11px] font-semibold text-black bg-amber-400 hover:bg-amber-300 transition-colors uppercase tracking-wider">
+              <ArrowDownToLine className="w-3 h-3" /> deposit
+            </button>
+            <button onClick={() => setWithdrawOpen(true)} disabled={bal <= 0} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[11px] font-semibold text-amber-300 bg-transparent border border-amber-500/40 hover:bg-amber-500/10 disabled:opacity-30 transition-colors uppercase tracking-wider">
+              <ArrowUpFromLine className="w-3 h-3" /> withdraw
+            </button>
+          </div>
+        </div>
+
+        {tab === 'launch' ? (
+          <LaunchPanel />
+        ) : (
+          <>
         <div className="flex flex-wrap items-center gap-2 border border-amber-500/15 bg-amber-500/[0.03] rounded-md px-3 py-2.5">
-          <button onClick={() => setDepositOpen(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[11px] font-semibold text-black bg-amber-400 hover:bg-amber-300 transition-colors uppercase tracking-wider">
-            <ArrowDownToLine className="w-3 h-3" /> deposit
-          </button>
-          <button onClick={() => setWithdrawOpen(true)} disabled={bal <= 0} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[11px] font-semibold text-amber-300 bg-transparent border border-amber-500/40 hover:bg-amber-500/10 disabled:opacity-30 transition-colors uppercase tracking-wider">
-            <ArrowUpFromLine className="w-3 h-3" /> withdraw
-          </button>
-          <div className="h-5 w-px bg-amber-500/20 mx-1" />
           <div className="text-[11px] text-neutral-500 uppercase tracking-wider mr-1">risk:</div>
           {Object.entries(RISK_META).map(([k, m]) => (
             <button
@@ -325,6 +337,8 @@ export default function Dashboard() {
             </table>
           </div>
         </TerminalPane>
+          </>
+        )}
 
         {/* Footer line */}
         <div className="text-[10px] text-neutral-600 border-t border-neutral-900 pt-3 flex items-center justify-between flex-wrap gap-2">
@@ -348,6 +362,17 @@ function Stat({ label, value, accent, icon }) {
       </div>
       <div className="mt-1.5 text-lg font-semibold tracking-tight" style={{ color: accent }}>{value}</div>
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-4 py-2 text-[11px] uppercase tracking-[0.18em] transition-all border-b-2 -mb-px ${active ? 'text-amber-400 border-amber-400' : 'text-neutral-500 border-transparent hover:text-neutral-300'}`}
+    >
+      {icon} {children}
+    </button>
   );
 }
 

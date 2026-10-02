@@ -247,7 +247,25 @@ agent_communication:
     message: "First test pass. Please verify backend endpoints work end-to-end. Use /api prefix. For withdraw, expect either success (if wallet funded) OR a graceful 'Insufficient balance' / 'Send failed' error — both are acceptable, we don't need to actually send real SOL during testing. For deposit/verify use an obviously-invalid signature and expect a 400 with a message. For auth test full signup→login→me flow. For trading, after a signup fund the user by direct DB write OR skip start-trading (it requires deposit). You can also test chat with a valid token."
   - agent: "main"
     message: |
-      BUG-FIX ROUND 2. Please re-verify these specific flows end-to-end against the user's complaint "make sure signup/login/deposit amount is remembered":
+      ROUND 3: Added pump.fun launch flow. Please verify the new endpoints:
+
+      NEW ENDPOINTS:
+      - POST /api/launch/upload (multipart: file + name + symbol + description + twitter + telegram + website) → uploads metadata to pump.fun IPFS, returns {ok, uri}
+      - POST /api/launch/create (json: name, symbol, metadata_uri, initial_buy_sol, slippage_bps, priority_fee_sol) → signs with deposit wallet, broadcasts on Solana mainnet, returns {ok, launch{mint,signature,pumpfun_url,solscan_tx}, user}
+      - GET /api/launch/history → user's launches
+
+      TESTS TO RUN:
+      L1. Auth happy path: signup a new user → login works.
+      L2. Insufficient balance: POST /api/launch/create with initial_buy_sol=0.1 for a user with balance=0 → expect 400 "Insufficient balance" error. Verify user balance unchanged in DB.
+      L3. Upload metadata: POST /api/launch/upload with a tiny valid PNG (you can create a 1x1 PNG in bytes). Expect either 200 with {ok:true, uri:"..."} OR a graceful 502 if the pump.fun IPFS endpoint rejects. Both acceptable — just confirm the endpoint responds and the error is clean JSON.
+      L4. Create fails gracefully when crew wallet on-chain is empty: credit a test user to balance_sol=1.0 via Mongo write. POST /api/launch/create with name="TestCoin", symbol="TST", metadata_uri="https://example.com/meta.json", initial_buy_sol=0.0. The call should attempt the real pump.fun create — expect EITHER:
+         (a) 502 "Launch failed: ..." if the crew wallet GVhTVmo…vT4dn6 is empty on-chain (expected — we have no SOL there), OR
+         (b) 502 from pumpportal if the metadata_uri is invalid.
+         The important part: user balance must NOT be debited on failure (verify balance_sol still == 1.0 after the call).
+      L5. History: GET /api/launch/history with bearer token for a fresh user → expect {launches: []}.
+      L6. Confirm existing endpoints still work (regression): /api/health, /api/me, /api/chat still return 200.
+
+      For L3 image bytes you can use: bytes.fromhex('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6300010000000500010d0a2db40000000049454e44ae426082')
 
       1. Persistence across restarts:
          a. POST /api/auth/signup with email=persist+<ts>@example.com password=test1234 → get token+user

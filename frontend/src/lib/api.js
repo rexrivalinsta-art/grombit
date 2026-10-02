@@ -42,6 +42,21 @@ export const api = {
   stopTrading: () => request('/trading/stop', { method: 'POST' }),
   tradingState: () => request('/trading/state'),
   chat: (text, session_id, model) => request('/chat', { method: 'POST', body: { text, session_id, model } }),
+  launchUpload: async (formData) => {
+    const t = getToken();
+    const res = await fetch(`${API}/launch/upload`, {
+      method: 'POST',
+      headers: t ? { Authorization: `Bearer ${t}` } : {},
+      body: formData,
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
+    if (!res.ok) throw new Error((data && (data.detail || data.message)) || `HTTP ${res.status}`);
+    return data;
+  },
+  launchCreate: (payload) => request('/launch/create', { method: 'POST', body: payload }),
+  launchHistory: () => request('/launch/history'),
 };
 
 export function setToken(token) {

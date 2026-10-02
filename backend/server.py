@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -24,6 +24,7 @@ from trading_engine import (
     credit_to_session, debit_from_session,
 )
 from chat_service import crew_chat_once
+from launch_service import upload_metadata as pf_upload_metadata, create_token as pf_create_token
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('trenchcrew')
@@ -33,6 +34,7 @@ mongo_client = AsyncIOMotorClient(mongo_url)
 db = mongo_client[os.environ['DB_NAME']]
 users_coll = db['tc_users']
 txs_coll = db['tc_transactions']
+launches_coll = db['tc_launches']
 
 app = FastAPI(title='TrenchCrew API')
 api = APIRouter(prefix='/api')
@@ -269,6 +271,107 @@ async def trading_state(user_id: str = Depends(get_current_user_id)):
 async def chat(body: ChatBody, user_id: str = Depends(get_current_user_id)):
     reply = await crew_chat_once(body.session_id or user_id, body.text, body.model)
     return {'reply': reply}
+
+# ----- LAUNCH (pump.fun) -----
+LAUNCH_OVERHEAD_SOL = 0.025  # mint + rent + priority + swap fee buffer
+
+@api.post('/launch/upload')
+async def launch_upload(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    symbol: str = Form(...),
+    description: str = Form(''),
+    twitter: str = Form(''),
+    telegram: str = Form(''),
+    website: str = Form(''),
+    user_id: str = Depends(get_current_user_id),
+):
+    # Validate basic
+    if not name.strip() or not symbol.strip():
+        raise HTTPException(status_code=400, detail='Name and symbol are required')
+    if len(symbol) > 10:
+        raise HTTPException(status_code=400, detail='Symbol max 10 chars')
+    content = await file.read()
+    if len(content) > 4 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail='Image too large (max 4MB)')
+    result = await pf_upload_metadata(
+        file_bytes=content,
+        filename=file.filename or 'image.png',
+        content_type=file.content_type or 'image/png',
+        name=name.strip(),
+        symbol=symbol.strip().upper(),
+        description=description.strip(),
+        twitter=twitter.strip(),
+        telegram=telegram.strip(),
+        website=website.strip(),
+    )
+    if not result.get('ok'):
+        raise HTTPException(status_code=502, detail=result.get('error', 'IPFS upload failed'))
+    return {'ok': True, 'uri': result['uri']}
+
+
+class LaunchCreateBody(BaseModel):
+    name: str
+    symbol: str
+    metadata_uri: str
+    initial_buy_sol: float = 0.0
+    slippage_bps: int = 1000  # 10%
+    priority_fee_sol: float = 0.0005
+
+
+@api.post('/launch/create')
+async def launch_create(body: LaunchCreateBody, user_id: str = Depends(get_current_user_id)):
+    user = await _get_user(user_id)
+    bal = float(user.get('balance_sol', 0.0))
+    cost = float(body.initial_buy_sol) + LAUNCH_OVERHEAD_SOL
+    if cost > bal:
+        raise HTTPException(status_code=400, detail=f'Insufficient balance: launch needs ~{cost:.4f} SOL, you have {bal:.4f}. Deposit more SOL.')
+
+    result = await pf_create_token(
+        name=body.name.strip(),
+        symbol=body.symbol.strip().upper(),
+        metadata_uri=body.metadata_uri,
+        initial_buy_sol=float(body.initial_buy_sol),
+        slippage_bps=int(body.slippage_bps),
+        priority_fee_sol=float(body.priority_fee_sol),
+    )
+    if not result.get('ok'):
+        raise HTTPException(status_code=502, detail=result.get('error', 'Launch failed'))
+
+    # Debit user by (initial buy + overhead). Only on success.
+    new_balance = max(0.0, bal - cost)
+    await users_coll.update_one({'id': user_id}, {'$set': {'balance_sol': new_balance}})
+    try:
+        from trading_engine import debit_from_session
+        debit_from_session(user_id, cost)
+    except Exception:
+        pass
+
+    launch_doc = {
+        'id': str(uuid.uuid4()),
+        'user_id': user_id,
+        'ts': time.time(),
+        'name': body.name,
+        'symbol': body.symbol.upper(),
+        'mint': result['mint'],
+        'signature': result['signature'],
+        'pumpfun_url': result['pumpfun_url'],
+        'solscan_tx': result['solscan_tx'],
+        'initial_buy_sol': float(body.initial_buy_sol),
+        'cost_sol': cost,
+        'metadata_uri': body.metadata_uri,
+    }
+    await launches_coll.insert_one(launch_doc)
+    fresh = await _get_user(user_id)
+    return {'ok': True, 'launch': {**launch_doc, '_id': None}, 'user': _public_user(fresh)}
+
+
+@api.get('/launch/history')
+async def launch_history(user_id: str = Depends(get_current_user_id)):
+    rows = await launches_coll.find({'user_id': user_id}).sort('ts', -1).to_list(50)
+    for r in rows:
+        r.pop('_id', None)
+    return {'launches': rows}
 
 app.include_router(api)
 
